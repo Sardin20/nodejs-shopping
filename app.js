@@ -11,6 +11,7 @@ const multer = require('multer');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+require('dotenv').config(); // Load environment variables
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
@@ -20,7 +21,8 @@ const errorController = require('./controllers/error');
 const User = require('./models/user');
 const { forwardError } = require('./utils');
 
-const MONGODB_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PWD}@cluster0-hcscb.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`;
+// Updated to use local MongoDB in Docker
+const MONGODB_URI = `mongodb://mongo:27017/${process.env.MONGO_DB}`;
 
 const app = express();
 const store = new MongoDbSessionStore({
@@ -38,9 +40,11 @@ const storage = multer.diskStorage({
   }
 });
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype === 'image/png' ||
+  if (
+    file.mimetype === 'image/png' ||
     file.mimetype === 'image/jpg' ||
-    file.mimetype === 'image.jpeg') {
+    file.mimetype === 'image/jpeg'
+  ) {
     cb(null, true);
   } else {
     cb(null, false);
@@ -63,12 +67,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(multer({ storage, fileFilter }).single('image'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use(session({
-  secret: 'my secret',
-  resave: false,
-  saveUninitialized: false,
-  store
-}));
+app.use(
+  session({
+    secret: 'my secret',
+    resave: false,
+    saveUninitialized: false,
+    store
+  })
+);
 app.use(csrf());
 app.use(flash());
 
@@ -85,7 +91,7 @@ app.use((req, res, next) => {
   User.findById(req.session.user._id)
     .then(user => {
       if (!user) {
-        next();
+        return next();
       }
       req.user = user;
       next();
@@ -112,4 +118,4 @@ mongoose
       console.log(`Listening to port ${port}...`);
     });
   })
-  .catch((err) => console.log(err));
+  .catch(err => console.log(err));
