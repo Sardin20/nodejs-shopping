@@ -11,7 +11,7 @@ const multer = require('multer');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
-require('.env').config(); // Load environment variables
+require('dotenv').config(); // Load environment variables
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
